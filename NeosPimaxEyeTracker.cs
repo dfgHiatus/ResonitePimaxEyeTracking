@@ -1,13 +1,10 @@
-﻿using NeosPimaxEyeTracker;
 using System;
 using System.Threading;
-using System.Collections;
 using System.IO;
 using System.Reflection;
 using System.Runtime.InteropServices;
 using WebSocketSharp;
 using WebSocketSharp.Server;
-using System.Diagnostics;
 
 namespace NeosPimaxEyeTracker
 {
@@ -54,7 +51,6 @@ namespace NeosPimaxEyeTracker
             eyeTracker.OnUpdate += OnEyeTrackerUpdate;
             eyeTracker.OnStart += OnEyeTrackerStart;
             eyeTracker.OnStop += OnEyeTrackerStop;
-            // UpdateExpressionParameters();
         }
 
         public static void OnApplicationQuit()
@@ -96,14 +92,14 @@ namespace NeosPimaxEyeTracker
                 message += "[" + NeosPimaxIntegration.eyeTracker.RightEye.Expression.Openness.ToString() + "],";
 
                 // LeftEyeXGaze
-                message += "[" + NeosPimaxIntegration.eyeTracker.LeftEye.Expression.PupilCenter.Item1.ToString() + "],";
+                message += "[" + NeosPimaxIntegration.eyeTracker.LeftEye.Expression.PupilCenter.Item1.ToString() + ";";
                 // LeftEyeYGaze
-                message += "[" + NeosPimaxIntegration.eyeTracker.LeftEye.Expression.PupilCenter.Item2.ToString() + "],";
+                message +=       NeosPimaxIntegration.eyeTracker.LeftEye.Expression.PupilCenter.Item2.ToString() + "],";
 
                 // RightEyeXGaze
-                message += "[" + NeosPimaxIntegration.eyeTracker.RightEye.Expression.PupilCenter.Item1.ToString() + "],";
+                message += "[" + NeosPimaxIntegration.eyeTracker.RightEye.Expression.PupilCenter.Item1.ToString() + ";";
                 // RightEyeYGaze
-                message += "[" + NeosPimaxIntegration.eyeTracker.RightEye.Expression.PupilCenter.Item2.ToString() + "],";
+                message +=       NeosPimaxIntegration.eyeTracker.RightEye.Expression.PupilCenter.Item2.ToString() + "],";
 
                 // EyesXCombinedGaze
                 message += "[" + (NeosPimaxIntegration.eyeTracker.RightEye.Expression.Blink ?
@@ -119,40 +115,58 @@ namespace NeosPimaxEyeTracker
 
             else
             {
-                return "";
+                return "EyeTrackerDisabled";
             }
             
         }
     }
 
-    public class NeosMain : WebSocketBehavior
+    public class NeosMain
     {
-        public static WebSocket ws;
+        public static WebSocketServer wssv;
+
+        public class WebSocketClass : WebSocketBehavior
+        {
+            // Empty string from Neos
+            protected override void OnMessage(MessageEventArgs e)
+            {
+                Send(NeosPimaxIntegration.UpdateExpressionParameters());
+            }
+
+            public static void MakeServer()
+            {
+                wssv = new WebSocketServer("ws://localhost:4649");
+                wssv.AddWebSocketService<WebSocketClass>("/WebSocketClass");
+                wssv.Start();
+            }
+        }
 
         public static void Main(string[] args)
         {
+            // Console.WriteLine();
+            Console.WriteLine("Press Esc to terminate.");
             AppDomain.CurrentDomain.ProcessExit += new EventHandler(OnProcessExit);
             NeosPimaxIntegration.OnApplicationStart();
 
-            using (var ws = new WebSocket("ws://localhost:4649/NeosMain"))
+            WebSocketClass.MakeServer();
+            while (wssv.IsListening)
             {
-                ws.OnOpen += (sender, e) => ws.Send("Pimax Connected\n");
-                ws.OnClose += (sender, e) => ws.Send("Pimax Disconnected\n");
-                ws.Connect();
-                while (true)
+                if (Console.ReadKey().Key == ConsoleKey.Escape)
                 {
-                    Thread.Sleep(1000);
-                    ws.Send(NeosPimaxIntegration.UpdateExpressionParameters());
+                    // Will close program
+                    wssv.Stop();
                 }
-            };
+                Thread.Sleep(200);
+            }    
         }
 
         public static void OnProcessExit(object sender, EventArgs e)
         {
-            if (NeosPimaxIntegration.eyeTracker?.Active ?? false) NeosPimaxIntegration.eyeTracker.Stop();
-            ws.Close();
+            NeosPimaxIntegration.OnApplicationQuit();
+            if (NeosPimaxIntegration.eyeTracker?.Active ?? false) 
+                NeosPimaxIntegration.eyeTracker.Stop();
+            if (wssv.IsListening) 
+                wssv.Stop();
         }
     }
-
-
 }
