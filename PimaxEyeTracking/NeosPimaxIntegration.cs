@@ -111,6 +111,9 @@ namespace NeosPimaxIntegration
 			eyes.CombinedEye.Widen          = MathX.Average(MathX.Clamp01(eyeTracker.LeftEye.PupilCenter.X), MathX.Clamp01(eyeTracker.LeftEye.PupilCenter.Y));
 			eyes.CombinedEye.Squeeze        = MathX.Average(MathX.Remap(MathX.Clamp(eyeTracker.LeftEye.PupilCenter.Y, -1f, 0f), -1f, 0f, 0f, 1f),
 															MathX.Remap(MathX.Clamp(eyeTracker.RightEye.PupilCenter.Y, -1f, 0f), -1f, 0f, 0f, 1f));
+
+			// Vive Pro Eye Style
+			eyes.Timestamp = (double) eyeTracker.Timestamp * 0.001;
 		}
 
 	}
