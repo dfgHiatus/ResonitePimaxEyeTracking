@@ -1,0 +1,12 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="Current" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <ProjectView>ProjectFiles</ProjectView>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|AnyCPU'">
+    <StartAction>Program</StartAction>
+    <StartProgram>G:\Steam\steamapps\common\NeosVR\Neos.exe</StartProgram>
+    <StartArguments>-DontAutoOpenCloudHome -PriorityWorkers 2 -BackgroundWorkers 2  -LoadAssembly "Libraries\NeosModLoader.dll" -Screen -v -screen-fullscreen 0</StartArguments>
+    <StartWorkingDirectory>G:\Steam\steamapps\common\NeosVR</StartWorkingDirectory>
+  </PropertyGroup>
+</Project>
