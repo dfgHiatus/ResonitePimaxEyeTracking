@@ -57,10 +57,10 @@ namespace Pimax.EyeTracking {
 
         public EyeExpressionState(Eye eyeType, EyeTracker eyeTracker)
         {
-            this.Eye = eyeType;
-            this.PupilCenter = new float2(eyeTracker.GetEyeExpression(this.Eye, EyeExpression.PupilCenterX), eyeTracker.GetEyeExpression(this.Eye, EyeExpression.PupilCenterY));
-            this.Openness = eyeTracker.GetEyeExpression(this.Eye, EyeExpression.Openness);
-            this.Blink = (eyeTracker.GetEyeExpression(this.Eye, EyeExpression.Blink) != 0.0f);
+            Eye         = eyeType;
+            PupilCenter = new float2(eyeTracker.GetEyeExpression(Eye, EyeExpression.PupilCenterX), eyeTracker.GetEyeExpression(Eye, EyeExpression.PupilCenterY));
+            Openness    = eyeTracker.GetEyeExpression(Eye, EyeExpression.Openness);
+            Blink       = eyeTracker.GetEyeExpression(Eye, EyeExpression.Blink) != 0.0f;
         }
     }
 
@@ -85,30 +85,30 @@ namespace Pimax.EyeTracking {
         public EyeExpressionState Expression { get; private set; }
 
         public EyeState(Eye eyeType, EyeTracker eyeTracker) {
-			this.Eye = eyeType;
-			this.Gaze = new float2(eyeTracker.GetEyeParameter(this.Eye, EyeParameter.GazeX), eyeTracker.GetEyeParameter(this.Eye, EyeParameter.GazeY));
-			this.GazeRaw = new float2(eyeTracker.GetEyeParameter(this.Eye, EyeParameter.GazeRawX), eyeTracker.GetEyeParameter(this.Eye, EyeParameter.GazeRawY));
-			this.GazeSmooth = new float2(eyeTracker.GetEyeParameter(this.Eye, EyeParameter.GazeSmoothX), eyeTracker.GetEyeParameter(this.Eye, EyeParameter.GazeSmoothY));
-			this.GazeOrigin = new float3(eyeTracker.GetEyeParameter(this.Eye, EyeParameter.GazeOriginX), eyeTracker.GetEyeParameter(this.Eye, EyeParameter.GazeOriginY), eyeTracker.GetEyeParameter(this.Eye, EyeParameter.GazeOriginZ));
-			this.GazeDirection = new float3(eyeTracker.GetEyeParameter(this.Eye, EyeParameter.GazeDirectionX), eyeTracker.GetEyeParameter(this.Eye, EyeParameter.GazeDirectionY), eyeTracker.GetEyeParameter(this.Eye, EyeParameter.GazeDirectionZ));
-			this.GazeReliability = eyeTracker.GetEyeParameter(this.Eye, EyeParameter.GazeReliability);
-			this.PupilDistance = eyeTracker.GetEyeParameter(this.Eye, EyeParameter.PupilDistance);
-			this.PupilMajorDiameter = eyeTracker.GetEyeParameter(this.Eye, EyeParameter.PupilMajorDiameter);
-			this.PupilMajorUnitDiameter = eyeTracker.GetEyeParameter(this.Eye, EyeParameter.PupilMajorUnitDiameter);
-			this.PupilMinorDiameter = eyeTracker.GetEyeParameter(this.Eye, EyeParameter.PupilMinorDiameter);
-			this.PupilMinorUnitDiameter = eyeTracker.GetEyeParameter(this.Eye, EyeParameter.PupilMinorUnitDiameter);
-			this.Blink = eyeTracker.GetEyeParameter(this.Eye, EyeParameter.Blink);
-			this.UpperEyelid = eyeTracker.GetEyeParameter(this.Eye, EyeParameter.UpperEyelid);
-			this.LowerEyelid = eyeTracker.GetEyeParameter(this.Eye, EyeParameter.LowerEyelid);
-			this.Openness = eyeTracker.GetEyeParameter(this.Eye, EyeParameter.Openness);
-			this.PupilCenter = new float2(eyeTracker.GetEyeParameter(this.Eye, EyeParameter.PupilCenterX), eyeTracker.GetEyeParameter(this.Eye, EyeParameter.PupilCenterY));
-            this.Expression = new EyeExpressionState(eyeType, eyeTracker);
+			Eye = eyeType;
+			Gaze = new float2(eyeTracker.GetEyeParameter(Eye, EyeParameter.GazeX), eyeTracker.GetEyeParameter(Eye, EyeParameter.GazeY));
+			GazeRaw = new float2(eyeTracker.GetEyeParameter(Eye, EyeParameter.GazeRawX), eyeTracker.GetEyeParameter(Eye, EyeParameter.GazeRawY));
+			GazeSmooth = new float2(eyeTracker.GetEyeParameter(Eye, EyeParameter.GazeSmoothX), eyeTracker.GetEyeParameter(Eye, EyeParameter.GazeSmoothY));
+			GazeOrigin = new float3(eyeTracker.GetEyeParameter(Eye, EyeParameter.GazeOriginX), eyeTracker.GetEyeParameter(Eye, EyeParameter.GazeOriginY), eyeTracker.GetEyeParameter(Eye, EyeParameter.GazeOriginZ));
+			GazeDirection = new float3(eyeTracker.GetEyeParameter(Eye, EyeParameter.GazeDirectionX), eyeTracker.GetEyeParameter(Eye, EyeParameter.GazeDirectionY), eyeTracker.GetEyeParameter(Eye, EyeParameter.GazeDirectionZ));
+			GazeReliability = eyeTracker.GetEyeParameter(Eye, EyeParameter.GazeReliability);
+			PupilDistance = eyeTracker.GetEyeParameter(Eye, EyeParameter.PupilDistance);
+			PupilMajorDiameter = eyeTracker.GetEyeParameter(Eye, EyeParameter.PupilMajorDiameter);
+			PupilMajorUnitDiameter = eyeTracker.GetEyeParameter(Eye, EyeParameter.PupilMajorUnitDiameter);
+			PupilMinorDiameter = eyeTracker.GetEyeParameter(Eye, EyeParameter.PupilMinorDiameter);
+			PupilMinorUnitDiameter = eyeTracker.GetEyeParameter(Eye, EyeParameter.PupilMinorUnitDiameter);
+			Blink = eyeTracker.GetEyeParameter(Eye, EyeParameter.Blink);
+			UpperEyelid = eyeTracker.GetEyeParameter(Eye, EyeParameter.UpperEyelid);
+			LowerEyelid = eyeTracker.GetEyeParameter(Eye, EyeParameter.LowerEyelid);
+			Openness = eyeTracker.GetEyeParameter(Eye, EyeParameter.Openness);
+			PupilCenter = new float2(eyeTracker.GetEyeParameter(Eye, EyeParameter.PupilCenterX), eyeTracker.GetEyeParameter(Eye, EyeParameter.PupilCenterY));
+            Expression = new EyeExpressionState(eyeType, eyeTracker);
 
             // Convert range from 0...1 to -1...1, defaulting eyes to center (0) when unavailable
-            float x = eyeTracker.GetEyeParameter(this.Eye, EyeParameter.PupilCenterX);  
-            float y = eyeTracker.GetEyeParameter(this.Eye, EyeParameter.PupilCenterY);
-            this.PupilCenter = new float2(x <= float.Epsilon ? 0.0f : (x * 2.0f - 1.0f), y <= float.Epsilon ? 0.0f : (y * 2.0f - 1.0f));
-            this.Openness = (x <= float.Epsilon && y <= float.Epsilon) ? 0.0f : 1.0f;
+            float x = eyeTracker.GetEyeParameter(Eye, EyeParameter.PupilCenterX);  
+            float y = eyeTracker.GetEyeParameter(Eye, EyeParameter.PupilCenterY);
+            PupilCenter = new float2(x <= float.Epsilon ? 0.0f : (x * 2.0f - 1.0f), y <= float.Epsilon ? 0.0f : (y * 2.0f - 1.0f));
+            Openness = (x <= float.Epsilon && y <= float.Epsilon) ? 0.0f : 1.0f;
         }
 	}
 
@@ -137,7 +137,7 @@ namespace Pimax.EyeTracking {
         public EyeState RightEye { get; private set; }
         public EyeState RecommendedEye { get; private set; }
 
-        public System.Int64 Timestamp => _GetTimestamp();
+        public long Timestamp => _GetTimestamp();
 		//public Eye RecommendedEye => _GetRecommendedEye();
 
 		public bool Active => _IsActive();
