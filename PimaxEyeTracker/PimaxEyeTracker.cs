@@ -1,10 +1,10 @@
-﻿using System;
 using System.Runtime.InteropServices;
+using BaseX;
 
 namespace Pimax.EyeTracking {
 	public enum EyeParameter {
 		GazeX, // Gaze point on the X axis (not working!)
-		GazeY, // Gaze point on then Y axis (not working!)
+		GazeY, // Gaze point on the Y axis (not working!)
 		GazeRawX, // Gaze point on the X axis before smoothing is applied (not working!)
 		GazeRawY, // Gaze point on the Y axis before smoothing is applied (not working!)
 		GazeSmoothX, // Gaze point on the X axis after smoothing is applied (not working!)
@@ -51,14 +51,14 @@ namespace Pimax.EyeTracking {
     public struct EyeExpressionState
     {
         public Eye Eye { get; private set; }
-        public Tuple<float, float> PupilCenter { get; private set; }
+        public float2 PupilCenter { get; private set; }
         public float Openness { get; private set; }
         public bool Blink { get; private set; }
 
         public EyeExpressionState(Eye eyeType, EyeTracker eyeTracker)
         {
             this.Eye = eyeType;
-            this.PupilCenter = new Tuple<float, float>(eyeTracker.GetEyeExpression(this.Eye, EyeExpression.PupilCenterX), eyeTracker.GetEyeExpression(this.Eye, EyeExpression.PupilCenterY));
+            this.PupilCenter = new float2(eyeTracker.GetEyeExpression(this.Eye, EyeExpression.PupilCenterX), eyeTracker.GetEyeExpression(this.Eye, EyeExpression.PupilCenterY));
             this.Openness = eyeTracker.GetEyeExpression(this.Eye, EyeExpression.Openness);
             this.Blink = (eyeTracker.GetEyeExpression(this.Eye, EyeExpression.Blink) != 0.0f);
         }
@@ -66,13 +66,13 @@ namespace Pimax.EyeTracking {
 
     public struct EyeState {
 		public Eye Eye { get; private set; }
-		public Tuple<float, float> Gaze { get; private set; }
-		public Tuple<float, float> GazeRaw { get; private set; }
-		public Tuple<float, float> GazeSmooth { get; private set; }
-		public Tuple<float, float, float> GazeOrigin { get; private set; }
-		public Tuple<float, float, float> GazeDirection { get; private set; }
+		public float2 Gaze { get; private set; }
+		public float2 GazeRaw { get; private set; }
+		public float2 GazeSmooth { get; private set; }
+		public float3 GazeOrigin { get; private set; }
+		public float3 GazeDirection { get; private set; }
 		public float GazeReliability { get; private set; }
-		public Tuple<float, float> PupilCenter { get; private set; }
+		public float2 PupilCenter { get; private set; }
 		public float PupilDistance { get; private set; }
 		public float PupilMajorDiameter { get; private set; }
 		public float PupilMajorUnitDiameter { get; private set; }
@@ -86,11 +86,11 @@ namespace Pimax.EyeTracking {
 
         public EyeState(Eye eyeType, EyeTracker eyeTracker) {
 			this.Eye = eyeType;
-			this.Gaze = new Tuple<float, float>(eyeTracker.GetEyeParameter(this.Eye, EyeParameter.GazeX), eyeTracker.GetEyeParameter(this.Eye, EyeParameter.GazeY));
-			this.GazeRaw = new Tuple<float, float>(eyeTracker.GetEyeParameter(this.Eye, EyeParameter.GazeRawX), eyeTracker.GetEyeParameter(this.Eye, EyeParameter.GazeRawY));
-			this.GazeSmooth = new Tuple<float, float>(eyeTracker.GetEyeParameter(this.Eye, EyeParameter.GazeSmoothX), eyeTracker.GetEyeParameter(this.Eye, EyeParameter.GazeSmoothY));
-			this.GazeOrigin = new Tuple<float, float, float>(eyeTracker.GetEyeParameter(this.Eye, EyeParameter.GazeOriginX), eyeTracker.GetEyeParameter(this.Eye, EyeParameter.GazeOriginY), eyeTracker.GetEyeParameter(this.Eye, EyeParameter.GazeOriginZ));
-			this.GazeDirection = new Tuple<float, float, float>(eyeTracker.GetEyeParameter(this.Eye, EyeParameter.GazeDirectionX), eyeTracker.GetEyeParameter(this.Eye, EyeParameter.GazeDirectionY), eyeTracker.GetEyeParameter(this.Eye, EyeParameter.GazeDirectionZ));
+			this.Gaze = new float2(eyeTracker.GetEyeParameter(this.Eye, EyeParameter.GazeX), eyeTracker.GetEyeParameter(this.Eye, EyeParameter.GazeY));
+			this.GazeRaw = new float2(eyeTracker.GetEyeParameter(this.Eye, EyeParameter.GazeRawX), eyeTracker.GetEyeParameter(this.Eye, EyeParameter.GazeRawY));
+			this.GazeSmooth = new float2(eyeTracker.GetEyeParameter(this.Eye, EyeParameter.GazeSmoothX), eyeTracker.GetEyeParameter(this.Eye, EyeParameter.GazeSmoothY));
+			this.GazeOrigin = new float3(eyeTracker.GetEyeParameter(this.Eye, EyeParameter.GazeOriginX), eyeTracker.GetEyeParameter(this.Eye, EyeParameter.GazeOriginY), eyeTracker.GetEyeParameter(this.Eye, EyeParameter.GazeOriginZ));
+			this.GazeDirection = new float3(eyeTracker.GetEyeParameter(this.Eye, EyeParameter.GazeDirectionX), eyeTracker.GetEyeParameter(this.Eye, EyeParameter.GazeDirectionY), eyeTracker.GetEyeParameter(this.Eye, EyeParameter.GazeDirectionZ));
 			this.GazeReliability = eyeTracker.GetEyeParameter(this.Eye, EyeParameter.GazeReliability);
 			this.PupilDistance = eyeTracker.GetEyeParameter(this.Eye, EyeParameter.PupilDistance);
 			this.PupilMajorDiameter = eyeTracker.GetEyeParameter(this.Eye, EyeParameter.PupilMajorDiameter);
@@ -101,13 +101,13 @@ namespace Pimax.EyeTracking {
 			this.UpperEyelid = eyeTracker.GetEyeParameter(this.Eye, EyeParameter.UpperEyelid);
 			this.LowerEyelid = eyeTracker.GetEyeParameter(this.Eye, EyeParameter.LowerEyelid);
 			this.Openness = eyeTracker.GetEyeParameter(this.Eye, EyeParameter.Openness);
-			this.PupilCenter = new Tuple<float, float>(eyeTracker.GetEyeParameter(this.Eye, EyeParameter.PupilCenterX), eyeTracker.GetEyeParameter(this.Eye, EyeParameter.PupilCenterY));
+			this.PupilCenter = new float2(eyeTracker.GetEyeParameter(this.Eye, EyeParameter.PupilCenterX), eyeTracker.GetEyeParameter(this.Eye, EyeParameter.PupilCenterY));
             this.Expression = new EyeExpressionState(eyeType, eyeTracker);
 
             // Convert range from 0...1 to -1...1, defaulting eyes to center (0) when unavailable
             float x = eyeTracker.GetEyeParameter(this.Eye, EyeParameter.PupilCenterX);  
             float y = eyeTracker.GetEyeParameter(this.Eye, EyeParameter.PupilCenterY);
-            this.PupilCenter = new Tuple<float, float>(x <= float.Epsilon ? 0.0f : (x * 2.0f - 1.0f), y <= float.Epsilon ? 0.0f : (y * 2.0f - 1.0f));
+            this.PupilCenter = new float2(x <= float.Epsilon ? 0.0f : (x * 2.0f - 1.0f), y <= float.Epsilon ? 0.0f : (y * 2.0f - 1.0f));
             this.Openness = (x <= float.Epsilon && y <= float.Epsilon) ? 0.0f : 1.0f;
         }
 	}
@@ -173,7 +173,6 @@ namespace Pimax.EyeTracking {
 		private void _OnStop() => OnStop?.Invoke();
 	}
 
-	// public class PimaxEyeTracker : MonoBehaviour {
 	public class PimaxEyeTracker {
 		public EyeTracker EyeTracker;
 
