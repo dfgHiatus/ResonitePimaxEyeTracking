@@ -69,7 +69,7 @@ namespace NeosPimaxIntegration
 
 		public void UpdateInputs(float deltaTime)
         {
-			eyes.IsEyeTrackingActive = eyeTracker.Active;
+			eyes.IsEyeTrackingActive     = eyeTracker.Active;
 
 			// Direction uses some cheeky plane to sphere projection
 			eyes.LeftEye.Direction       = new float3(MathX.Tan(Alpha * eyeTracker.LeftEye.PupilCenter.Y),
