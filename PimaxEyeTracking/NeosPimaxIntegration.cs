@@ -3,6 +3,7 @@ using NeosModLoader;
 using FrooxEngine;
 using BaseX;
 using FrooxEngine.CommonAvatar;
+using System;
 
 namespace NeosPimaxIntegration
 {
@@ -20,18 +21,18 @@ namespace NeosPimaxIntegration
 		}
 
 		// Fix Issue 3440 (Can't mix and match the Eye Tracker with SRAnipal Lip)
-		[HarmonyPatch(typeof(AvatarEyeDataSourceAssigner))]
+		[HarmonyPatch(typeof(AvatarEyeDataSourceAssigner), "OnEquip")]
 		public class AvatarEyeDataSourceAssignerPatch
         {
-			public void Postfix(AvatarEyeDataSourceAssigner _aedsa, AvatarObjectSlot slot)
+			public static void Postfix(AvatarEyeDataSourceAssigner __instance, AvatarObjectSlot slot)
 			{
-				if (_aedsa.TargetReference.Target == null)
+				if (__instance.TargetReference.Target == null)
 					return;
 				AvatarEyeTrackingInfo rawEyeData = null;
 				slot.Slot.ActiveUserRoot.ForeachRegisteredComponent<AvatarEyeTrackingInfo>(val => {
 					if (val.EyeDataSource.Target?.IsEyeTrackingActive ?? false)
 						rawEyeData = val; } );
-				_aedsa.TargetReference.Target.Target = rawEyeData?.EyeDataSource.Target;
+				__instance.TargetReference.Target.Target = rawEyeData?.EyeDataSource.Target;
 			}
 		}
 
@@ -44,12 +45,13 @@ namespace NeosPimaxIntegration
 				try
 				{
 					PimaxEyeInputDevice pi = new PimaxEyeInputDevice();
-					Debug("Pimax Module: " + pi.ToString());
 					__instance.RegisterInputDriver(pi);
+					Debug("Pimax Module Registered: " + pi.ToString());
 				}
-				catch
+				catch (Exception e)
 				{
 					Warn("PimaxEyeTracking failed to initiallize.");
+					Warn(e.ToString());
 				}
 			}
 		}
@@ -65,7 +67,7 @@ namespace NeosPimaxIntegration
 		public float Alpha = 2f;
 		public float Beta = 2f;
 
-		public void CollectDeviceInfos(BaseX.DataTreeList list) // (dmx) do this later ... this should be fine
+		public void CollectDeviceInfos(BaseX.DataTreeList list)
         {
 			DataTreeDictionary dataTreeDictionary = new DataTreeDictionary();
 			dataTreeDictionary.Add("Name", "Pimax Eye Tracking");
@@ -94,9 +96,6 @@ namespace NeosPimaxIntegration
 			eyes.LeftEye.RawPosition = new float3(eyeTracker.LeftEye.PupilCenter.X,
 												  eyeTracker.LeftEye.PupilCenter.Y,
 												  0f);
-			//eyes.LeftEye.RawPosition     = new float3(eyeTracker.LeftEye.GazeOrigin.X, 
-			//										  eyeTracker.LeftEye.GazeOrigin.Y, 
-			//										  eyeTracker.LeftEye.GazeOrigin.Z);
 			eyes.LeftEye.Openness        = 1 - eyeTracker.LeftEye.Openness;
 			eyes.LeftEye.PupilDiameter   = eyeTracker.LeftEye.PupilMajorUnitDiameter;
 			eyes.LeftEye.IsTracking      = eyeTracker.Active;
@@ -110,9 +109,6 @@ namespace NeosPimaxIntegration
 			eyes.RightEye.RawPosition    = new float3(eyeTracker.RightEye.PupilCenter.X, 
 												      eyeTracker.RightEye.PupilCenter.Y, 
 													  0f);
-			//eyes.RightEye.RawPosition = new float3(eyeTracker.RightEye.GazeOrigin.X,
-			//							  eyeTracker.RightEye.GazeOrigin.Y,
-			//							  eyeTracker.RightEye.GazeOrigin.Z);
 			eyes.RightEye.Openness       = 1 - eyeTracker.RightEye.Openness;
 			eyes.RightEye.PupilDiameter  = eyeTracker.RightEye.PupilMajorUnitDiameter;
 			eyes.RightEye.IsTracking     = eyeTracker.Active;
@@ -126,9 +122,6 @@ namespace NeosPimaxIntegration
 			eyes.CombinedEye.RawPosition    = new float3(MathX.Average(eyeTracker.LeftEye.PupilCenter.X + eyeTracker.RightEye.PupilCenter.X),
 													  MathX.Average(eyeTracker.LeftEye.PupilCenter.Y + eyeTracker.RightEye.PupilCenter.X),
 													  0f);
-			//eyes.CombinedEye.RawPosition = new float3(MathX.Average(eyeTracker.LeftEye.GazeOrigin.X + eyeTracker.RightEye.GazeOrigin.X),
-			//										  MathX.Average(eyeTracker.LeftEye.GazeOrigin.Y + eyeTracker.RightEye.GazeOrigin.X),
-			//										  MathX.Average(eyeTracker.LeftEye.GazeOrigin.X + eyeTracker.RightEye.GazeOrigin.Z));
 			eyes.CombinedEye.Openness       = 1 - MathX.Average(eyeTracker.LeftEye.Openness, eyeTracker.RightEye.Openness);
 			eyes.CombinedEye.PupilDiameter  = MathX.Average(eyeTracker.LeftEye.PupilMajorUnitDiameter + eyeTracker.RightEye.PupilMajorUnitDiameter);
 			eyes.CombinedEye.IsTracking     = eyeTracker.Active;
