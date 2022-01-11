@@ -2,6 +2,7 @@
 using NeosModLoader;
 using FrooxEngine;
 using BaseX;
+using FrooxEngine.CommonAvatar;
 
 namespace NeosPimaxIntegration
 {
@@ -16,6 +17,22 @@ namespace NeosPimaxIntegration
 			// Harmony.DEBUG = true;
 			Harmony harmony = new Harmony("net.dfg.PimaxEyeTracking");
 			harmony.PatchAll();
+		}
+
+		// Fix Issue 3440 (Can't mix and match the Eye Tracker with SRAnipal Lip)
+		[HarmonyPatch(typeof(AvatarEyeDataSourceAssigner))]
+		public class AvatarEyeDataSourceAssignerPatch
+        {
+			public void Postfix(AvatarEyeDataSourceAssigner _aedsa, AvatarObjectSlot slot)
+			{
+				if (_aedsa.TargetReference.Target == null)
+					return;
+				AvatarEyeTrackingInfo rawEyeData = null;
+				slot.Slot.ActiveUserRoot.ForeachRegisteredComponent<AvatarEyeTrackingInfo>(val => {
+					if (val.EyeDataSource.Target?.IsEyeTrackingActive ?? false)
+						rawEyeData = val; } );
+				_aedsa.TargetReference.Target.Target = rawEyeData?.EyeDataSource.Target;
+			}
 		}
 
 		[HarmonyPatch(typeof(InputInterface), MethodType.Constructor)]
@@ -33,7 +50,6 @@ namespace NeosPimaxIntegration
 				catch
 				{
 					Warn("PimaxEyeTracking failed to initiallize.");
-					throw;
 				}
 			}
 		}
@@ -45,7 +61,7 @@ namespace NeosPimaxIntegration
 		public Pimax.EyeTracking.EyeTracker eyeTracker = new Pimax.EyeTracking.EyeTracker();
 		public int UpdateOrder => 100;
 
-		// Both of these will need tweaking depending on eye swing
+		// Both of these will need tweaking depending on user eye swing
 		public float Alpha = 2f;
 		public float Beta = 2f;
 
@@ -75,9 +91,12 @@ namespace NeosPimaxIntegration
 			eyes.LeftEye.Direction       = new float3(MathX.Tan(Alpha * eyeTracker.LeftEye.PupilCenter.Y),
 													  MathX.Tan(Beta  * eyeTracker.LeftEye.PupilCenter.X), 
 													  1f).Normalized;
-			eyes.LeftEye.RawPosition     = new float3(eyeTracker.LeftEye.GazeOrigin.X, 
-													  eyeTracker.LeftEye.GazeOrigin.y, 
-													  eyeTracker.LeftEye.GazeOrigin.Z);
+			eyes.LeftEye.RawPosition = new float3(eyeTracker.LeftEye.PupilCenter.X,
+												  eyeTracker.LeftEye.PupilCenter.Y,
+												  0f);
+			//eyes.LeftEye.RawPosition     = new float3(eyeTracker.LeftEye.GazeOrigin.X, 
+			//										  eyeTracker.LeftEye.GazeOrigin.Y, 
+			//										  eyeTracker.LeftEye.GazeOrigin.Z);
 			eyes.LeftEye.Openness        = 1 - eyeTracker.LeftEye.Openness;
 			eyes.LeftEye.PupilDiameter   = eyeTracker.LeftEye.PupilMajorUnitDiameter;
 			eyes.LeftEye.IsTracking      = eyeTracker.Active;
@@ -88,9 +107,12 @@ namespace NeosPimaxIntegration
 			eyes.RightEye.Direction      = new float3(MathX.Tan(Alpha * eyeTracker.RightEye.PupilCenter.Y),
 													  MathX.Tan(Beta  * eyeTracker.RightEye.PupilCenter.X), 
 													  1f).Normalized;
-			eyes.RightEye.RawPosition    = new float3(eyeTracker.RightEye.GazeOrigin.X, 
-												      eyeTracker.RightEye.GazeOrigin.Y, 
-													  eyeTracker.RightEye.GazeOrigin.Z);
+			eyes.RightEye.RawPosition    = new float3(eyeTracker.RightEye.PupilCenter.X, 
+												      eyeTracker.RightEye.PupilCenter.Y, 
+													  0f);
+			//eyes.RightEye.RawPosition = new float3(eyeTracker.RightEye.GazeOrigin.X,
+			//							  eyeTracker.RightEye.GazeOrigin.Y,
+			//							  eyeTracker.RightEye.GazeOrigin.Z);
 			eyes.RightEye.Openness       = 1 - eyeTracker.RightEye.Openness;
 			eyes.RightEye.PupilDiameter  = eyeTracker.RightEye.PupilMajorUnitDiameter;
 			eyes.RightEye.IsTracking     = eyeTracker.Active;
@@ -101,9 +123,12 @@ namespace NeosPimaxIntegration
 			eyes.CombinedEye.Direction      = new float3(MathX.Average(MathX.Tan(Alpha * eyeTracker.LeftEye.PupilCenter.Y), MathX.Tan(Alpha * eyeTracker.RightEye.PupilCenter.Y)),
 														 MathX.Average(MathX.Tan(Alpha * eyeTracker.LeftEye.PupilCenter.X), MathX.Tan(Alpha * eyeTracker.RightEye.PupilCenter.X)), 
 														 1f).Normalized;
-			eyes.CombinedEye.RawPosition    = new float3(MathX.Average(eyeTracker.LeftEye.GazeOrigin.X + eyeTracker.RightEye.GazeOrigin.X),
-													  MathX.Average(eyeTracker.LeftEye.GazeOrigin.Y + eyeTracker.RightEye.GazeOrigin.X),
-													  MathX.Average(eyeTracker.LeftEye.GazeOrigin.X + eyeTracker.RightEye.GazeOrigin.Z));
+			eyes.CombinedEye.RawPosition    = new float3(MathX.Average(eyeTracker.LeftEye.PupilCenter.X + eyeTracker.RightEye.PupilCenter.X),
+													  MathX.Average(eyeTracker.LeftEye.PupilCenter.Y + eyeTracker.RightEye.PupilCenter.X),
+													  0f);
+			//eyes.CombinedEye.RawPosition = new float3(MathX.Average(eyeTracker.LeftEye.GazeOrigin.X + eyeTracker.RightEye.GazeOrigin.X),
+			//										  MathX.Average(eyeTracker.LeftEye.GazeOrigin.Y + eyeTracker.RightEye.GazeOrigin.X),
+			//										  MathX.Average(eyeTracker.LeftEye.GazeOrigin.X + eyeTracker.RightEye.GazeOrigin.Z));
 			eyes.CombinedEye.Openness       = 1 - MathX.Average(eyeTracker.LeftEye.Openness, eyeTracker.RightEye.Openness);
 			eyes.CombinedEye.PupilDiameter  = MathX.Average(eyeTracker.LeftEye.PupilMajorUnitDiameter + eyeTracker.RightEye.PupilMajorUnitDiameter);
 			eyes.CombinedEye.IsTracking     = eyeTracker.Active;
