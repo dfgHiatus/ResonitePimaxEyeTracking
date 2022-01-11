@@ -10,7 +10,7 @@ namespace NeosPimaxIntegration
 	{
 		public override string Name => "PimaxEyeTracking";
 		public override string Author => "dfgHiatus";
-		public override string Version => "1.0.0";
+		public override string Version => "1.0.1";
 		public override string Link => "https://github.com/dfgHiatus/NeosPimaxEyeTracking/";
 		public override void OnEngineInit()
 		{
