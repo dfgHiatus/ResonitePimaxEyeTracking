@@ -90,26 +90,26 @@ namespace NeosPimaxIntegration
 			eyes.IsEyeTrackingActive     = eyeTracker.Active & Engine.Current.InputInterface.VR_Active;
 
 			// Direction uses some cheeky plane to sphere projection
-			eyes.LeftEye.Direction       = new float3(MathX.Tan(Alpha * eyeTracker.LeftEye.PupilCenter.Y),
-													  MathX.Tan(Beta  * eyeTracker.LeftEye.PupilCenter.X), 
+			eyes.LeftEye.Direction       = new float3(MathX.Tan(Alpha * eyeTracker.LeftEye.PupilCenter.X),
+													  MathX.Tan(Beta  * (-1f) * eyeTracker.LeftEye.PupilCenter.Y), 
 													  1f).Normalized;
-			eyes.LeftEye.RawPosition = new float3(eyeTracker.LeftEye.PupilCenter.X,
-												  eyeTracker.LeftEye.PupilCenter.Y,
+			eyes.LeftEye.RawPosition = new float3((eyeTracker.LeftEye.PupilCenter.Y * (-1f)),
+												  eyeTracker.LeftEye.PupilCenter.X,
 												  0f);
-			eyes.LeftEye.Openness        = 1 - eyeTracker.LeftEye.Openness;
+			eyes.LeftEye.Openness        = eyeTracker.LeftEye.Openness;
 			eyes.LeftEye.PupilDiameter   = eyeTracker.LeftEye.PupilMajorUnitDiameter;
 			eyes.LeftEye.IsTracking      = eyeTracker.Active;
 			eyes.LeftEye.IsDeviceActive  = eyeTracker.Active;
 			eyes.LeftEye.Widen           = MathX.Clamp01(eyeTracker.LeftEye.PupilCenter.Y);
 			eyes.LeftEye.Squeeze         = MathX.Remap(MathX.Clamp(eyeTracker.LeftEye.PupilCenter.Y, -1f, 0f), -1f, 0f, 0f, 1f);
 
-			eyes.RightEye.Direction      = new float3(MathX.Tan(Alpha * eyeTracker.RightEye.PupilCenter.Y),
-													  MathX.Tan(Beta  * eyeTracker.RightEye.PupilCenter.X), 
+			eyes.RightEye.Direction      = new float3(MathX.Tan(Alpha * eyeTracker.RightEye.PupilCenter.X),
+													  MathX.Tan(Beta  * (-1f) * eyeTracker.RightEye.PupilCenter.Y), 
 													  1f).Normalized;
-			eyes.RightEye.RawPosition    = new float3(eyeTracker.RightEye.PupilCenter.X, 
-												      eyeTracker.RightEye.PupilCenter.Y, 
+			eyes.RightEye.RawPosition    = new float3((eyeTracker.RightEye.PupilCenter.Y * (-1f)), 
+												      eyeTracker.RightEye.PupilCenter.X, 
 													  0f);
-			eyes.RightEye.Openness       = 1 - eyeTracker.RightEye.Openness;
+			eyes.RightEye.Openness       = eyeTracker.RightEye.Openness;
 			eyes.RightEye.PupilDiameter  = eyeTracker.RightEye.PupilMajorUnitDiameter;
 			eyes.RightEye.IsTracking     = eyeTracker.Active;
 			eyes.RightEye.IsDeviceActive = eyeTracker.Active;
@@ -122,7 +122,7 @@ namespace NeosPimaxIntegration
 			eyes.CombinedEye.RawPosition    = new float3(MathX.Average(eyeTracker.LeftEye.PupilCenter.X + eyeTracker.RightEye.PupilCenter.X),
 													  MathX.Average(eyeTracker.LeftEye.PupilCenter.Y + eyeTracker.RightEye.PupilCenter.X),
 													  0f);
-			eyes.CombinedEye.Openness       = 1 - MathX.Average(eyeTracker.LeftEye.Openness, eyeTracker.RightEye.Openness);
+			eyes.CombinedEye.Openness       = MathX.Average(eyeTracker.LeftEye.Openness, eyeTracker.RightEye.Openness);
 			eyes.CombinedEye.PupilDiameter  = MathX.Average(eyeTracker.LeftEye.PupilMajorUnitDiameter + eyeTracker.RightEye.PupilMajorUnitDiameter);
 			eyes.CombinedEye.IsTracking     = eyeTracker.Active;
 			eyes.CombinedEye.IsDeviceActive = eyeTracker.Active;
