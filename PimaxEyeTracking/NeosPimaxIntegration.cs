@@ -123,7 +123,7 @@ namespace NeosPimaxIntegration
 													  MathX.Average(eyeTracker.LeftEye.PupilCenter.Y + eyeTracker.RightEye.PupilCenter.X),
 													  0f);
 			eyes.CombinedEye.Openness       = MathX.Average(eyeTracker.LeftEye.Openness, eyeTracker.RightEye.Openness);
-			eyes.CombinedEye.PupilDiameter  = MathX.Average(eyeTracker.LeftEye.PupilMajorUnitDiameter + eyeTracker.RightEye.PupilMajorUnitDiameter);
+			eyes.CombinedEye.PupilDiameter  = MathX.Average(eyeTracker.LeftEye.PupilMajorUnitDiameter, eyeTracker.RightEye.PupilMajorUnitDiameter);
 			eyes.CombinedEye.IsTracking     = eyeTracker.Active;
 			eyes.CombinedEye.IsDeviceActive = eyeTracker.Active;
 			eyes.CombinedEye.Widen          = MathX.Average(MathX.Clamp01(eyeTracker.LeftEye.PupilCenter.X), MathX.Clamp01(eyeTracker.LeftEye.PupilCenter.Y));
