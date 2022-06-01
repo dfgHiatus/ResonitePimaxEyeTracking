@@ -44,8 +44,9 @@
       <SpecificVersion>False</SpecificVersion>
       <HintPath>G:\Steam\steamapps\common\NeosVR\Neos_Data\Managed\FrooxEngine.dll</HintPath>
     </Reference>
-    <Reference Include="NeosModLoader">
-      <HintPath>G:\Steam\steamapps\common\NeosVR\Libraries\NeosModLoader.dll</HintPath>
+    <Reference Include="NeosModLoader, Version=2021.11.6.291, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>I:\SteamLibrary\steamapps\common\NeosVR\Libraries\NeosModLoader.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Numerics" />
@@ -63,6 +64,6 @@
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
-    <PostBuildEvent>copy "$(TargetDir)\$(TargetFileName)" "G:\Steam\steamapps\common\NeosVR\nml_mods"</PostBuildEvent>
+    <PostBuildEvent>copy "$(TargetDir)\$(TargetFileName)" "I:\SteamLibrary\steamapps\common\NeosVR\nml_mods"</PostBuildEvent>
   </PropertyGroup>
 </Project>
