@@ -16,7 +16,7 @@ namespace NeosPimaxIntegration
 
 		// Cheeky eye tests
 		[AutoRegisterConfigKey]
-		public static ModConfigurationKey<float> lerpSpeed = new ModConfigurationKey<float>("lerpSpeed", "lerpSpeed", () => 1f);
+		public static ModConfigurationKey<float> lerpSpeed = new ModConfigurationKey<float>("lerpSpeed", "lerpSpeed", () => 24f);
 		[AutoRegisterConfigKey]
 		public static ModConfigurationKey<float> leftEyeX = new ModConfigurationKey<float>("leftEyeX", "leftEyeX", () => 0f);
 		[AutoRegisterConfigKey]
@@ -71,9 +71,9 @@ namespace NeosPimaxIntegration
 			public Eyes eyes;
 			public EyeTracker pimaxEyeTracker = new EyeTracker();
 			public int UpdateOrder => 100;
-			// Requires a license to track otherwise
+			// Requires a license to track
 			private const float constPupilSize = 0.003f;
-			public float lerp = 1f;
+			public float lerp;
 
 			public void CollectDeviceInfos(DataTreeList list)
 			{
@@ -100,12 +100,12 @@ namespace NeosPimaxIntegration
 			public void UpdateInputs(float deltaTime)
 			{
 				eyes.IsEyeTrackingActive = config.GetValue(eyeTrackingActive);
-				lerp = config.GetValue(lerpSpeed);
 
 				eyes.LeftEye.Direction = new float3(MathX.Tan(config.GetValue(ALPHA) * config.GetValue(leftEyeX)),
 														  MathX.Tan(config.GetValue(BETA) * config.GetValue(leftEyeY) * -1),
 														  1f).Normalized;
 				eyes.LeftEye.RawPosition = float3.Zero;
+				lerp = config.GetValue(leftOpen) == 1f ? config.GetValue(lerpSpeed) : -1f * config.GetValue(lerpSpeed);
 				eyes.LeftEye.Openness = MathX.SmoothLerp(eyes.LeftEye.Openness, config.GetValue(leftOpen), ref lerp, deltaTime);
 				eyes.LeftEye.PupilDiameter = constPupilSize;
 				eyes.LeftEye.IsTracking = config.GetValue(pimaxActive);
@@ -117,6 +117,7 @@ namespace NeosPimaxIntegration
 														  MathX.Tan(config.GetValue(BETA) * config.GetValue(rightEyeY) * -1),
 														  1f).Normalized;
 				eyes.RightEye.RawPosition = float3.Zero;
+				lerp = config.GetValue(rightOpen) == 1f ? config.GetValue(lerpSpeed) : -1f * config.GetValue(lerpSpeed);
 				eyes.RightEye.Openness = MathX.SmoothLerp(eyes.RightEye.Openness, config.GetValue(rightOpen), ref lerp, deltaTime);
 				eyes.RightEye.PupilDiameter = constPupilSize;
 				eyes.RightEye.IsTracking = config.GetValue(pimaxActive);
@@ -130,6 +131,8 @@ namespace NeosPimaxIntegration
 																		   MathX.Tan(config.GetValue(BETA) * config.GetValue(rightEyeY) * -1)),
 													    1f).Normalized;
 				eyes.CombinedEye.RawPosition = float3.Zero;
+				lerp = config.GetValue(leftOpen) == 1f || config.GetValue(rightOpen) == 1f ? 
+					config.GetValue(lerpSpeed) : -1f * config.GetValue(lerpSpeed);
 				eyes.CombinedEye.Openness = MathX.SmoothLerp(
 					eyes.CombinedEye.Openness,
 					MathX.Max(pimaxEyeTracker.LeftEye.Openness, pimaxEyeTracker.RightEye.Openness),
