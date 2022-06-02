@@ -1,9 +1,11 @@
 ﻿using System;
+using System.Collections.Generic;
 using HarmonyLib;
 using NeosModLoader;
 using FrooxEngine;
 using BaseX;
 using Pimax.EyeTracking;
+using FrooxEngine.UIX;
 
 namespace NeosPimaxIntegration
 {
@@ -14,9 +16,26 @@ namespace NeosPimaxIntegration
 		[AutoRegisterConfigKey]
 		public static ModConfigurationKey<float> BETA = new ModConfigurationKey<float>("eye_swing_beta", "Eye Swing Beta (Y)", () => 2f);
 		[AutoRegisterConfigKey]
-		public static ModConfigurationKey<float> lerpSpeed = new ModConfigurationKey<float>("lerpSpeed", "lerpSpeed", () => 24f);
+		public static ModConfigurationKey<float> lerpSpeed = new ModConfigurationKey<float>("lerpSpeed", "Lerp Speed", () => 24f);
+		[AutoRegisterConfigKey]
+		public static ModConfigurationKey<bool> offsetbutton = new ModConfigurationKey<bool>("offsetButton", "If true, reset Gaze Offset", () => false);
 
-		public override string Name => "PimaxEyeTracking";
+		private static Dictionary<EyeSide, float3> offsetDictionary = new Dictionary<EyeSide, float3>();
+		private bool offsetButtonValue
+        {
+			get { return offsetButtonValue; }
+			set 
+			{ 
+				if (offsetButtonValue == true)
+                {
+					PimaxEyeInputDevice.calculateEyeOffset();
+
+				}
+				offsetButtonValue = value; 
+			}
+        }
+
+        public override string Name => "PimaxEyeTracking";
 		public override string Author => "dfgHiatus";
 		public override string Version => "1.0.1-Irix";
 		public override string Link => "https://github.com/dfgHiatus/NeosPimaxEyeTracking/";
@@ -50,7 +69,7 @@ namespace NeosPimaxIntegration
 		}
 		public class PimaxEyeInputDevice : IInputDriver
 		{
-			public Eyes eyes;
+			public static Eyes eyes;
 			public EyeTracker pimaxEyeTracker = new EyeTracker();
 			public int UpdateOrder => 100;
 			// Requires a license to track
@@ -79,13 +98,20 @@ namespace NeosPimaxIntegration
 				eyes = new Eyes(inputInterface, "Pimax Eye Tracking");
 			}
 
+			public static void calculateEyeOffset()
+			{
+				offsetDictionary[EyeSide.Left] = eyes.LeftEye.Direction;
+				offsetDictionary[EyeSide.Right] = eyes.RightEye.Direction;
+				offsetDictionary[EyeSide.Combined] = eyes.CombinedEye.Direction;
+			}
+
 			public void UpdateInputs(float deltaTime)
 			{
 				eyes.IsEyeTrackingActive = pimaxEyeTracker.Active & Engine.Current.InputInterface.VR_Active;
 
 				eyes.LeftEye.Direction = new float3(MathX.Tan(config.GetValue(ALPHA) * pimaxEyeTracker.LeftEye.PupilCenter.X),
 														  MathX.Tan(config.GetValue(BETA) * pimaxEyeTracker.LeftEye.PupilCenter.Y * -1),
-														  1f).Normalized;
+														  1f).Normalized - offsetDictionary[EyeSide.Left];
 				eyes.LeftEye.RawPosition = float3.Zero;
 				lerp = pimaxEyeTracker.LeftEye.Openness == 1f ? config.GetValue(lerpSpeed) : -1f * config.GetValue(lerpSpeed);
 				eyes.LeftEye.Openness = MathX.SmoothLerp(eyes.LeftEye.Openness, pimaxEyeTracker.LeftEye.Openness, ref lerp, deltaTime);
@@ -93,11 +119,11 @@ namespace NeosPimaxIntegration
 				eyes.LeftEye.IsTracking = pimaxEyeTracker.Active;
 				eyes.LeftEye.IsDeviceActive = pimaxEyeTracker.Active;
 				eyes.LeftEye.Widen = MathX.Clamp01(pimaxEyeTracker.LeftEye.PupilCenter.Y);
-				eyes.LeftEye.Squeeze = MathX.Remap(MathX.Clamp(pimaxEyeTracker.LeftEye.PupilCenter.Y, -1f, 0f), -1f, 0f, 0f, 1f);
+				eyes.LeftEye.Squeeze = MathX.Abs(MathX.Clamp(pimaxEyeTracker.LeftEye.PupilCenter.Y, -1f, 0f));
 
 				eyes.RightEye.Direction = new float3(MathX.Tan(config.GetValue(ALPHA) * pimaxEyeTracker.RightEye.PupilCenter.X),
 														  MathX.Tan(config.GetValue(BETA) * pimaxEyeTracker.RightEye.PupilCenter.Y * -1),
-														  1f).Normalized;
+														  1f).Normalized - offsetDictionary[EyeSide.Right];
 				eyes.RightEye.RawPosition = float3.Zero;
 				lerp = pimaxEyeTracker.RightEye.Openness == 1f ? config.GetValue(lerpSpeed) : -1f * config.GetValue(lerpSpeed);
 				eyes.RightEye.Openness = MathX.SmoothLerp(eyes.RightEye.Openness, pimaxEyeTracker.RightEye.Openness, ref lerp, deltaTime);
@@ -105,13 +131,9 @@ namespace NeosPimaxIntegration
 				eyes.RightEye.IsTracking = pimaxEyeTracker.Active;
 				eyes.RightEye.IsDeviceActive = pimaxEyeTracker.Active;
 				eyes.RightEye.Widen = MathX.Clamp01(pimaxEyeTracker.RightEye.PupilCenter.Y);
-				eyes.RightEye.Squeeze = MathX.Remap(MathX.Clamp(pimaxEyeTracker.RightEye.PupilCenter.Y, -1f, 0f), -1f, 0f, 0f, 1f);
+				eyes.RightEye.Squeeze = MathX.Abs(MathX.Clamp(pimaxEyeTracker.RightEye.PupilCenter.Y, -1f, 0f));
 
-				eyes.CombinedEye.Direction = new float3(MathX.Average(MathX.Tan(config.GetValue(ALPHA) * pimaxEyeTracker.LeftEye.PupilCenter.X),
-																		   MathX.Tan(config.GetValue(ALPHA) * pimaxEyeTracker.RightEye.PupilCenter.X)),
-													    MathX.Average(MathX.Tan(config.GetValue(BETA) * pimaxEyeTracker.LeftEye.PupilCenter.Y),
-																		   MathX.Tan(config.GetValue(BETA) * pimaxEyeTracker.RightEye.PupilCenter.Y * -1)),
-													    1f).Normalized;
+				eyes.CombinedEye.Direction = MathX.Average(eyes.LeftEye.Direction, eyes.RightEye.Direction) - offsetDictionary[EyeSide.Combined];
 				eyes.CombinedEye.RawPosition = float3.Zero;
 				lerp = pimaxEyeTracker.LeftEye.Openness == 1f || pimaxEyeTracker.RightEye.Openness == 1f ? 
 					config.GetValue(lerpSpeed) : -1f * config.GetValue(lerpSpeed);
@@ -123,9 +145,8 @@ namespace NeosPimaxIntegration
 				eyes.CombinedEye.PupilDiameter = constPupilSize;
 				eyes.CombinedEye.IsTracking = pimaxEyeTracker.Active;
 				eyes.CombinedEye.IsDeviceActive = pimaxEyeTracker.Active;
-				eyes.CombinedEye.Widen = MathX.Average(MathX.Clamp01(pimaxEyeTracker.LeftEye.PupilCenter.X), MathX.Clamp01(pimaxEyeTracker.LeftEye.PupilCenter.Y));
-				eyes.CombinedEye.Squeeze = MathX.Average(MathX.Remap(MathX.Clamp(pimaxEyeTracker.LeftEye.PupilCenter.Y, -1f, 0f), -1f, 0f, 0f, 1f),
-																MathX.Remap(MathX.Clamp(pimaxEyeTracker.RightEye.PupilCenter.Y, -1f, 0f), -1f, 0f, 0f, 1f));
+				eyes.CombinedEye.Widen = MathX.Average(eyes.LeftEye.Widen, eyes.RightEye.Widen);
+				eyes.CombinedEye.Squeeze = MathX.Average(eyes.LeftEye.Squeeze, eyes.RightEye.Squeeze);
 
 				// Vive Pro Eye Style.
 				eyes.Timestamp += deltaTime;
