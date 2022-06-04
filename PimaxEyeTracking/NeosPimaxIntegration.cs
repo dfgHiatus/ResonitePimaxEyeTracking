@@ -93,7 +93,7 @@ namespace NeosPimaxIntegration
 				eyes.LeftEye.IsTracking = pimaxEyeTracker.Active;
 				eyes.LeftEye.IsDeviceActive = pimaxEyeTracker.Active;
 				eyes.LeftEye.Widen = MathX.Clamp01(pimaxEyeTracker.LeftEye.PupilCenter.Y);
-				eyes.LeftEye.Squeeze = MathX.Remap(MathX.Clamp(pimaxEyeTracker.LeftEye.PupilCenter.Y, -1f, 0f), -1f, 0f, 0f, 1f);
+				eyes.LeftEye.Squeeze = MathX.Abs(MathX.Clamp(pimaxEyeTracker.LeftEye.PupilCenter.Y, -1f, 0f));
 
 				eyes.RightEye.Direction = new float3(MathX.Tan(config.GetValue(ALPHA) * pimaxEyeTracker.RightEye.PupilCenter.X),
 														  MathX.Tan(config.GetValue(BETA) * pimaxEyeTracker.RightEye.PupilCenter.Y * -1),
@@ -105,7 +105,7 @@ namespace NeosPimaxIntegration
 				eyes.RightEye.IsTracking = pimaxEyeTracker.Active;
 				eyes.RightEye.IsDeviceActive = pimaxEyeTracker.Active;
 				eyes.RightEye.Widen = MathX.Clamp01(pimaxEyeTracker.RightEye.PupilCenter.Y);
-				eyes.RightEye.Squeeze = MathX.Remap(MathX.Clamp(pimaxEyeTracker.RightEye.PupilCenter.Y, -1f, 0f), -1f, 0f, 0f, 1f);
+				eyes.RightEye.Squeeze = MathX.Abs(MathX.Clamp(pimaxEyeTracker.RightEye.PupilCenter.Y, -1f, 0f));
 
 				eyes.CombinedEye.Direction = new float3(MathX.Average(MathX.Tan(config.GetValue(ALPHA) * pimaxEyeTracker.LeftEye.PupilCenter.X),
 																		   MathX.Tan(config.GetValue(ALPHA) * pimaxEyeTracker.RightEye.PupilCenter.X)),
@@ -123,9 +123,8 @@ namespace NeosPimaxIntegration
 				eyes.CombinedEye.PupilDiameter = constPupilSize;
 				eyes.CombinedEye.IsTracking = pimaxEyeTracker.Active;
 				eyes.CombinedEye.IsDeviceActive = pimaxEyeTracker.Active;
-				eyes.CombinedEye.Widen = MathX.Average(MathX.Clamp01(pimaxEyeTracker.LeftEye.PupilCenter.X), MathX.Clamp01(pimaxEyeTracker.LeftEye.PupilCenter.Y));
-				eyes.CombinedEye.Squeeze = MathX.Average(MathX.Remap(MathX.Clamp(pimaxEyeTracker.LeftEye.PupilCenter.Y, -1f, 0f), -1f, 0f, 0f, 1f),
-																MathX.Remap(MathX.Clamp(pimaxEyeTracker.RightEye.PupilCenter.Y, -1f, 0f), -1f, 0f, 0f, 1f));
+				eyes.CombinedEye.Widen = MathX.Average(eyes.LeftEye.Widen, eyes.RightEye.Widen);
+				eyes.CombinedEye.Squeeze = MathX.Average(eyes.LeftEye.Squeeze, eyes.RightEye.Squeeze);
 
 				// Vive Pro Eye Style.
 				eyes.Timestamp += deltaTime;
