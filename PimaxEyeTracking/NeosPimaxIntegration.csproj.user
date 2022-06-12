@@ -6,7 +6,7 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|AnyCPU'">
     <StartAction>Program</StartAction>
     <StartProgram>I:\SteamLibrary\steamapps\common\NeosVR\Neos.exe</StartProgram>
-    <StartArguments>-DontAutoOpenCloudHome -PriorityWorkers 2 -BackgroundWorkers 2  -LoadAssembly "Libraries\NeosModLoader.dll" -v -Screen</StartArguments>
+    <StartArguments>-DontAutoOpenCloudHome -PriorityWorkers 2 -BackgroundWorkers 2  -LoadAssembly "Libraries\NeosModLoader.dll" -v -Screen  -CachePath "F:\NeosDB\Cache"</StartArguments>
     <StartWorkingDirectory>I:\SteamLibrary\steamapps\common\NeosVR\</StartWorkingDirectory>
   </PropertyGroup>
 </Project>

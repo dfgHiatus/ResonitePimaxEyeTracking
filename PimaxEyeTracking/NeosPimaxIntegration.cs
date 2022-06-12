@@ -22,12 +22,23 @@ namespace NeosPimaxIntegration
 		public override string Link => "https://github.com/dfgHiatus/NeosPimaxEyeTracking/";
 
 		public static ModConfiguration config;
+		public static EyeTracker pimaxEyeTracker = new EyeTracker();
 		public override void OnEngineInit()
 		{
 			// Harmony.DEBUG = true;
 			config = GetConfiguration();
 			Harmony harmony = new Harmony("net.dfg.PimaxEyeTracking");
 			harmony.PatchAll();
+		}
+
+		[HarmonyPatch(typeof(Engine), "Shutdown")]
+		public class ShutdownPatch
+		{
+			public static bool Prefix()
+			{
+				pimaxEyeTracker.Stop();
+				return true;
+			}
 		}
 
 		[HarmonyPatch(typeof(InputInterface), MethodType.Constructor)]
@@ -38,6 +49,14 @@ namespace NeosPimaxIntegration
 			{
 				try
 				{
+					if (!pimaxEyeTracker.Active)
+					{
+						if (!pimaxEyeTracker.Start())
+						{
+							Warn("Could not connect to Pimax Eye Tracking Service");
+							return;
+						}
+					}
 					PimaxEyeInputDevice pi = new PimaxEyeInputDevice();
 					__instance.RegisterInputDriver(pi);
 				}
@@ -51,7 +70,6 @@ namespace NeosPimaxIntegration
 		public class PimaxEyeInputDevice : IInputDriver
 		{
 			public Eyes eyes;
-			public EyeTracker pimaxEyeTracker = new EyeTracker();
 			public int UpdateOrder => 100;
 			// Requires a license to track. 
 			// Neos remaps a pupil range of 2-8MM to a value of 0-1, so a value of 0.005 => 0.5 is idle.
@@ -69,14 +87,6 @@ namespace NeosPimaxIntegration
 
 			public void RegisterInputs(InputInterface inputInterface)
 			{
-				if (!pimaxEyeTracker.Active)
-				{
-					if (!pimaxEyeTracker.Start())
-					{
-						Warn("Could not connect to Pimax Eye Tracking Service");
-						return;
-					}
-				}
 				eyes = new Eyes(inputInterface, "Pimax Eye Tracking");
 			}
 
