@@ -3,10 +3,8 @@
 A [NeosModLoader](https://github.com/zkxs/NeosModLoader) mod for [Neos VR](https://neos.com/)  
 Integrates the Droolon Pi1 eye tracking module. Tracks the following, per eye and combined:
 - Gaze
-- Eye Squeeze
 - Eye Widen
 - Eye Openess
-- Pupil dilation (iffy)
 
 Related issue on the Neos Github:
 https://github.com/Neos-Metaverse/NeosPublic/issues/1696
