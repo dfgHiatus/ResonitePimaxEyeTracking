@@ -2,7 +2,7 @@
 using NeosModLoader;
 using FrooxEngine;
 using BaseX;
-using FrooxEngine.CommonAvatar;
+using Pimax.EyeTracking;
 using System;
 
 namespace NeosPimaxIntegration
@@ -11,29 +11,54 @@ namespace NeosPimaxIntegration
 	{
 		public override string Name => "PimaxEyeTracking";
 		public override string Author => "dfgHiatus";
-		public override string Version => "1.0.1";
+		public override string Version => "1.1.0";
 		public override string Link => "https://github.com/dfgHiatus/NeosPimaxEyeTracking/";
+
+		private static ModConfiguration config;
+
+		[AutoRegisterConfigKey]
+		private static ModConfigurationKey<float> Alpha = new ModConfigurationKey<float>("alpha", "Eye X Sensitivity", () => 1.0f);
+
+		[AutoRegisterConfigKey]
+		private static ModConfigurationKey<float> Beta = new ModConfigurationKey<float>("beta", "Eye Y Sensitivity", () => 1.0f);
+
+		[AutoRegisterConfigKey]
+		private static ModConfigurationKey<bool> SwapX = new ModConfigurationKey<bool>("SwapX", "Flip Eye X Movement", () => false);
+		private static float _swappedX = 1f;
+
+		[AutoRegisterConfigKey]
+		private static ModConfigurationKey<bool> SwapY = new ModConfigurationKey<bool>("SwapY", "Flip Eye Y Movement", () => true);
+		private static float _swappedY = -1f;
+
+		private static EyeTracker eyeTracker = new EyeTracker();
 		public override void OnEngineInit()
 		{
 			// Harmony.DEBUG = true;
-			Harmony harmony = new Harmony("net.dfg.PimaxEyeTracking");
-			harmony.PatchAll();
+			new Harmony("net.dfg.PimaxEyeTracking").PatchAll();
+			config.OnThisConfigurationChanged += HandleChanges;
+			Engine.Current.OnShutdown += () => eyeTracker.Stop();
 		}
 
-		// Fix Issue 3440 (Can't mix and match the Eye Tracker with SRAnipal Lip)
-		[HarmonyPatch(typeof(AvatarEyeDataSourceAssigner), "OnEquip")]
-		public class AvatarEyeDataSourceAssignerPatch
+        private void HandleChanges(ConfigurationChangedEvent configurationChangedEvent)
         {
-			public static void Postfix(AvatarEyeDataSourceAssigner __instance, AvatarObjectSlot slot)
-			{
-				if (__instance.TargetReference.Target == null)
-					return;
-				AvatarEyeTrackingInfo rawEyeData = null;
-				slot.Slot.ActiveUserRoot.ForeachRegisteredComponent<AvatarEyeTrackingInfo>(val => {
-					if (val.EyeDataSource.Target?.IsEyeTrackingActive ?? false)
-						rawEyeData = val; } );
-				__instance.TargetReference.Target.Target = rawEyeData?.EyeDataSource.Target;
+            switch (configurationChangedEvent.Key.Name)
+            {
+				case "SwapX":
+					_swappedX = config.GetValue(SwapX) ? -1 : 1f;
+					break;
+				case "SwapY":
+					_swappedY = config.GetValue(SwapY) ? -1 : 1f;
+					break;
+				default:
+					break;
 			}
+        }
+
+		public override void DefineConfiguration(ModConfigurationDefinitionBuilder builder)
+		{
+			builder
+				.Version(new Version(1, 0, 0))
+				.AutoSave(true);
 		}
 
 		[HarmonyPatch(typeof(InputInterface), MethodType.Constructor)]
@@ -55,84 +80,82 @@ namespace NeosPimaxIntegration
 				}
 			}
 		}
-	}
-
-	class PimaxEyeInputDevice : IInputDriver
-	{
-		public Eyes eyes;
-		public Pimax.EyeTracking.EyeTracker eyeTracker = new Pimax.EyeTracking.EyeTracker();
-		public int UpdateOrder => 100;
-
-		// Both of these will need tweaking depending on user eye swing
-		public float Alpha = 2f;
-		public float Beta = 2f;
-
-		public void CollectDeviceInfos(BaseX.DataTreeList list)
-        {
-			DataTreeDictionary dataTreeDictionary = new DataTreeDictionary();
-			dataTreeDictionary.Add("Name", "Pimax Eye Tracking");
-			dataTreeDictionary.Add("Type", "Eye Tracking");
-			dataTreeDictionary.Add("Model", "Droolon Pi1");
-			list.Add(dataTreeDictionary);
-		}
-
-		public void RegisterInputs(InputInterface inputInterface)
+		
+		public class PimaxEyeInputDevice : IInputDriver
 		{
-			if (!eyeTracker.Active)
-            {
-				eyeTracker.Start();
+			public Eyes eyes;
+			public int UpdateOrder => 100;
+			private const float _defaultPupilSize = 0.0035f;
+
+			public void CollectDeviceInfos(DataTreeList list)
+			{
+				DataTreeDictionary dataTreeDictionary = new DataTreeDictionary();
+				dataTreeDictionary.Add("Name", "Pimax Eye Tracking");
+				dataTreeDictionary.Add("Type", "Eye Tracking");
+				dataTreeDictionary.Add("Model", "Droolon Pi1");
+				list.Add(dataTreeDictionary);
 			}
-			eyes = new Eyes(inputInterface, "Pimax Eye Tracking");
+
+			public void RegisterInputs(InputInterface inputInterface)
+			{
+				if (!eyeTracker.Active)
+				{
+					eyeTracker.Start();
+				}
+				eyes = new Eyes(inputInterface, "Pimax Eye Tracking");
+			}
+
+			// TODO Check if eyePosition needs to be projected
+			public void UpdateInputs(float deltaTime)
+			{
+				eyes.IsEyeTrackingActive = eyeTracker.Active & Engine.Current.InputInterface.VR_Active;
+
+				var leftEyeDirection = Project2DTo3D(_swappedX * eyeTracker.LeftEye.PupilCenter.X, _swappedY * eyeTracker.LeftEye.PupilCenter.Y);
+				var leftEyeFakeWiden = MathX.Remap(MathX.Clamp01(eyeTracker.LeftEye.PupilCenter.Y), 0f, 1f, 0f, 0.33f);
+				UpdateEye(leftEyeDirection, float3.Zero, eyeTracker.Active, _defaultPupilSize, eyeTracker.LeftEye.Openness,
+					leftEyeFakeWiden, 0f, 0f, deltaTime, eyes.LeftEye) ;
+
+				var rightEyeDirection = Project2DTo3D(_swappedX * eyeTracker.RightEye.PupilCenter.X, _swappedY * eyeTracker.RightEye.PupilCenter.Y);
+				var rightEyeFakeWiden = MathX.Remap(MathX.Clamp01(eyeTracker.RightEye.PupilCenter.Y), 0f, 1f, 0f, 0.33f);
+				UpdateEye(rightEyeDirection, float3.Zero, eyeTracker.Active, _defaultPupilSize, eyeTracker.RightEye.Openness,
+					rightEyeFakeWiden, 0f, 0f, deltaTime, eyes.RightEye);
+
+				var combinedEyeDirection = MathX.Average(eyes.LeftEye.Direction, eyes.RightEye.Direction);
+				var combinedEyeFakeWiden = MathX.Remap(MathX.Clamp01(MathX.Average(
+					eyeTracker.LeftEye.PupilCenter.Y, eyeTracker.RightEye.PupilCenter.Y)), 0f, 1f, 0f, 0.33f);
+				UpdateEye(combinedEyeDirection, float3.Zero, eyeTracker.Active, _defaultPupilSize, MathX.Max(eyeTracker.LeftEye.Openness, eyeTracker.RightEye.Openness),
+					combinedEyeFakeWiden, 0f, 0f, deltaTime, eyes.CombinedEye);
+
+				eyes.ComputeCombinedEyeParameters();
+				eyes.Timestamp = eyeTracker.Timestamp * 0.001;
+				eyes.FinishUpdate();
+			}
+
+			private void UpdateEye(float3 gazeDirection, float3 gazeOrigin, bool status, float pupilSize, float openness,
+				float widen, float squeeze, float frown, float deltaTime, FrooxEngine.Eye eye)
+			{
+				eye.IsDeviceActive = Engine.Current.InputInterface.VR_Active;
+				eye.IsTracking = status;
+
+				if (eye.IsTracking)
+				{
+					eye.UpdateWithDirection(gazeDirection);
+					eye.RawPosition = gazeOrigin;
+					eye.PupilDiameter = pupilSize;
+				}
+
+				eye.Openness = openness; // In this case will be 0 or 1. Lerping has proven inconsistent
+				eye.Widen = widen;
+				eye.Squeeze = squeeze;
+				eye.Frown = frown;
+			}
+
+			private static float3 Project2DTo3D(float x, float y)
+			{
+				return new float3(MathX.Tan(config.GetValue(Alpha) * x),
+								  MathX.Tan(config.GetValue(Beta) * y),
+								  1f).Normalized;
+			}
 		}
-
-		public void UpdateInputs(float deltaTime)
-        {
-			eyes.IsEyeTrackingActive     = eyeTracker.Active & Engine.Current.InputInterface.VR_Active;
-
-			// Direction uses some cheeky plane to sphere projection
-			eyes.LeftEye.Direction       = new float3(MathX.Tan(Alpha * eyeTracker.LeftEye.PupilCenter.X),
-													  MathX.Tan(Beta  * (-1f) * eyeTracker.LeftEye.PupilCenter.Y), 
-													  1f).Normalized;
-			eyes.LeftEye.RawPosition = new float3((eyeTracker.LeftEye.PupilCenter.Y * (-1f)),
-												  eyeTracker.LeftEye.PupilCenter.X,
-												  0f);
-			eyes.LeftEye.Openness        = eyeTracker.LeftEye.Openness;
-			eyes.LeftEye.PupilDiameter   = eyeTracker.LeftEye.PupilMajorUnitDiameter;
-			eyes.LeftEye.IsTracking      = eyeTracker.Active;
-			eyes.LeftEye.IsDeviceActive  = eyeTracker.Active;
-			eyes.LeftEye.Widen           = MathX.Clamp01(eyeTracker.LeftEye.PupilCenter.Y);
-			eyes.LeftEye.Squeeze         = MathX.Remap(MathX.Clamp(eyeTracker.LeftEye.PupilCenter.Y, -1f, 0f), -1f, 0f, 0f, 1f);
-
-			eyes.RightEye.Direction      = new float3(MathX.Tan(Alpha * eyeTracker.RightEye.PupilCenter.X),
-													  MathX.Tan(Beta  * (-1f) * eyeTracker.RightEye.PupilCenter.Y), 
-													  1f).Normalized;
-			eyes.RightEye.RawPosition    = new float3((eyeTracker.RightEye.PupilCenter.Y * (-1f)), 
-												      eyeTracker.RightEye.PupilCenter.X, 
-													  0f);
-			eyes.RightEye.Openness       = eyeTracker.RightEye.Openness;
-			eyes.RightEye.PupilDiameter  = eyeTracker.RightEye.PupilMajorUnitDiameter;
-			eyes.RightEye.IsTracking     = eyeTracker.Active;
-			eyes.RightEye.IsDeviceActive = eyeTracker.Active;
-			eyes.RightEye.Widen          = MathX.Clamp01(eyeTracker.RightEye.PupilCenter.Y);
-			eyes.RightEye.Squeeze        = MathX.Remap(MathX.Clamp(eyeTracker.RightEye.PupilCenter.Y, -1f, 0f), -1f, 0f, 0f, 1f);
-
-			eyes.CombinedEye.Direction      = new float3(MathX.Average(MathX.Tan(Alpha * eyeTracker.LeftEye.PupilCenter.Y), MathX.Tan(Alpha * eyeTracker.RightEye.PupilCenter.Y)),
-														 MathX.Average(MathX.Tan(Alpha * eyeTracker.LeftEye.PupilCenter.X), MathX.Tan(Alpha * eyeTracker.RightEye.PupilCenter.X)), 
-														 1f).Normalized;
-			eyes.CombinedEye.RawPosition    = new float3(MathX.Average(eyeTracker.LeftEye.PupilCenter.X + eyeTracker.RightEye.PupilCenter.X),
-													  MathX.Average(eyeTracker.LeftEye.PupilCenter.Y + eyeTracker.RightEye.PupilCenter.X),
-													  0f);
-			eyes.CombinedEye.Openness       = MathX.Average(eyeTracker.LeftEye.Openness, eyeTracker.RightEye.Openness);
-			eyes.CombinedEye.PupilDiameter  = MathX.Average(eyeTracker.LeftEye.PupilMajorUnitDiameter, eyeTracker.RightEye.PupilMajorUnitDiameter);
-			eyes.CombinedEye.IsTracking     = eyeTracker.Active;
-			eyes.CombinedEye.IsDeviceActive = eyeTracker.Active;
-			eyes.CombinedEye.Widen          = MathX.Average(MathX.Clamp01(eyeTracker.LeftEye.PupilCenter.X), MathX.Clamp01(eyeTracker.LeftEye.PupilCenter.Y));
-			eyes.CombinedEye.Squeeze        = MathX.Average(MathX.Remap(MathX.Clamp(eyeTracker.LeftEye.PupilCenter.Y, -1f, 0f), -1f, 0f, 0f, 1f),
-															MathX.Remap(MathX.Clamp(eyeTracker.RightEye.PupilCenter.Y, -1f, 0f), -1f, 0f, 0f, 1f));
-
-			// Vive Pro Eye Style
-			eyes.Timestamp = (double) eyeTracker.Timestamp * 0.001;
-		}
-
 	}
 }
