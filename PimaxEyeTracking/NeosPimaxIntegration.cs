@@ -35,6 +35,7 @@ namespace NeosPimaxIntegration
 		{
 			// Harmony.DEBUG = true;
 			new Harmony("net.dfg.PimaxEyeTracking").PatchAll();
+			config = GetConfiguration();
 			config.OnThisConfigurationChanged += HandleChanges;
 			Engine.Current.OnShutdown += () => eyeTracker.Stop();
 		}
