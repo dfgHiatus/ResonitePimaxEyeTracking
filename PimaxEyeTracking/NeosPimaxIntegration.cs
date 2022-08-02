@@ -23,12 +23,20 @@ namespace NeosPimaxIntegration
 		private static ModConfigurationKey<float> Beta = new ModConfigurationKey<float>("beta", "Eye Y Sensitivity", () => 1.0f);
 
 		[AutoRegisterConfigKey]
-		private static ModConfigurationKey<bool> SwapX = new ModConfigurationKey<bool>("SwapX", "Flip Eye X Movement", () => false);
+		private static ModConfigurationKey<bool> SwapX = new ModConfigurationKey<bool>("SwapX", "Invert Eye X Movement", () => false);
 		private static float _swappedX = 1f;
 
 		[AutoRegisterConfigKey]
-		private static ModConfigurationKey<bool> SwapY = new ModConfigurationKey<bool>("SwapY", "Flip Eye Y Movement", () => true);
+		private static ModConfigurationKey<bool> SwapY = new ModConfigurationKey<bool>("SwapY", "Invert Eye Y Movement", () => true);
 		private static float _swappedY = -1f;
+
+		[AutoRegisterConfigKey]
+		private static ModConfigurationKey<bool> SwapLeftBlink = new ModConfigurationKey<bool>("SwapLeftBlink", "Invert Left Eye Blink", () => false);
+		private static bool _swappedLeftBlink = false;
+
+		[AutoRegisterConfigKey]
+		private static ModConfigurationKey<bool> SwapRightBlink = new ModConfigurationKey<bool>("SwapRightBlink", "Invert Right Eye Blink", () => false);
+		private static bool _swappedRightBlink = false;
 
 		private static EyeTracker eyeTracker = new EyeTracker();
 		public override void OnEngineInit()
@@ -50,6 +58,12 @@ namespace NeosPimaxIntegration
 					break;
 				case "SwapY":
 					_swappedY = config.GetValue(SwapY) ? -1 : 1f;
+					break;
+				case "SwapLeftBlink":
+					_swappedLeftBlink = config.GetValue(SwapLeftBlink);
+					break;
+				case "SwapRightBlink":
+					_swappedRightBlink = config.GetValue(SwapRightBlink);
 					break;
 				default:
 					break;
@@ -114,17 +128,17 @@ namespace NeosPimaxIntegration
 
 				var leftEyeDirection = Project2DTo3D(_swappedX * eyeTracker.LeftEye.PupilCenter.X, _swappedY * eyeTracker.LeftEye.PupilCenter.Y);
 				var leftEyeFakeWiden = MathX.Remap(MathX.Clamp01(eyeTracker.LeftEye.PupilCenter.Y), 0f, 1f, 0f, 0.33f);
-				UpdateEye(leftEyeDirection, float3.Zero, eyeTracker.Active, _defaultPupilSize, eyeTracker.LeftEye.Openness,
+				UpdateEye(leftEyeDirection, float3.Zero, eyeTracker.Active, _defaultPupilSize, ComputeOpeness(eyeTracker.LeftEye.Openness, EyeSide.Left),
 					leftEyeFakeWiden, 0f, 0f, deltaTime, eyes.LeftEye) ;
 
 				var rightEyeDirection = Project2DTo3D(_swappedX * eyeTracker.RightEye.PupilCenter.X, _swappedY * eyeTracker.RightEye.PupilCenter.Y);
 				var rightEyeFakeWiden = MathX.Remap(MathX.Clamp01(eyeTracker.RightEye.PupilCenter.Y), 0f, 1f, 0f, 0.33f);
-				UpdateEye(rightEyeDirection, float3.Zero, eyeTracker.Active, _defaultPupilSize, eyeTracker.RightEye.Openness,
+				UpdateEye(rightEyeDirection, float3.Zero, eyeTracker.Active, _defaultPupilSize, ComputeOpeness(eyeTracker.RightEye.Openness, EyeSide.Right),
 					rightEyeFakeWiden, 0f, 0f, deltaTime, eyes.RightEye);
 
 				var combinedEyeDirection = MathX.Average(eyes.LeftEye.Direction, eyes.RightEye.Direction);
 				var combinedEyeFakeWiden = MathX.Remap(MathX.Clamp01(MathX.Average(
-					eyeTracker.LeftEye.PupilCenter.Y, eyeTracker.RightEye.PupilCenter.Y)), 0f, 1f, 0f, 0.33f);
+					eyeTracker.LeftEye.PupilCenter.Y, eyeTracker.RightEye.PupilCenter.Y)), 0f, 1f, 0f, 0.33f); // Should not need ComputeOpeness here
 				UpdateEye(combinedEyeDirection, float3.Zero, eyeTracker.Active, _defaultPupilSize, MathX.Max(eyeTracker.LeftEye.Openness, eyeTracker.RightEye.Openness),
 					combinedEyeFakeWiden, 0f, 0f, deltaTime, eyes.CombinedEye);
 
@@ -157,6 +171,16 @@ namespace NeosPimaxIntegration
 				return new float3(MathX.Tan(config.GetValue(Alpha) * x),
 								  MathX.Tan(config.GetValue(Beta) * y),
 								  1f).Normalized;
+			}
+
+			private static float ComputeOpeness(float openess, EyeSide side)
+            {
+				// Remap 0-1 to 1-0 quickly
+				if (_swappedLeftBlink && side == EyeSide.Left)
+					return (-1 * openess) + 1;
+				else if (_swappedRightBlink && side == EyeSide.Right)
+					return (-1 * openess) + 1;
+				return openess;
 			}
 		}
 	}
