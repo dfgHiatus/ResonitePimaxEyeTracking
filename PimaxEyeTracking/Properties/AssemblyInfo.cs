@@ -4,11 +4,11 @@ using System.Runtime.InteropServices;
 // General Information about an assembly is controlled through the following
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
-[assembly: AssemblyTitle("PimaxEyeTracking-NeosVR")]
-[assembly: AssemblyDescription("Integrates the Droolon Pi1's Eye tracking into NeosVR.")]
+[assembly: AssemblyTitle("PimaxEyeTracking-Resonite")]
+[assembly: AssemblyDescription("Integrates the Droolon Pi1's Eye tracking into Resonite.")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("")]
-[assembly: AssemblyProduct("PimaxEyeTracking-NeosVR")]
+[assembly: AssemblyProduct("PimaxEyeTracking-Resonite")]
 [assembly: AssemblyCopyright("Copyright ©  2022")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
