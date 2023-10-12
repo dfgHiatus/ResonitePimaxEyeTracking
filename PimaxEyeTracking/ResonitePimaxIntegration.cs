@@ -53,27 +53,26 @@ public class ResonitePimaxIntegration : ResoniteMod
 		Engine.Current.OnShutdown += () => eyeTracker.Stop();
 	}
 
-        private void HandleChanges(ConfigurationChangedEvent configurationChangedEvent)
+    private void HandleChanges(ConfigurationChangedEvent configurationChangedEvent)
+    {
+        switch (configurationChangedEvent.Key.Name)
         {
-            switch (configurationChangedEvent.Key.Name)
-            {
-				case "SwapX":
-					_swappedX = config.GetValue(SwapX) ? -1 : 1f;
-					break;
-				case "SwapY":
-					_swappedY = config.GetValue(SwapY) ? -1 : 1f;
-					break;
-				case "SwapLeftBlink":
-					_swappedLeftBlink = config.GetValue(SwapLeftBlink);
-					break;
-				case "SwapRightBlink":
-					_swappedRightBlink = config.GetValue(SwapRightBlink);
-					break;
-				default:
-					break;
-			}
-        }
-
+			case "SwapX":
+				_swappedX = config.GetValue(SwapX) ? -1 : 1f;
+				break;
+			case "SwapY":
+				_swappedY = config.GetValue(SwapY) ? -1 : 1f;
+				break;
+			case "SwapLeftBlink":
+				_swappedLeftBlink = config.GetValue(SwapLeftBlink);
+				break;
+			case "SwapRightBlink":
+				_swappedRightBlink = config.GetValue(SwapRightBlink);
+				break;
+			default:
+				break;
+		}
+    }
 
 	[HarmonyPatch(typeof(InputInterface), MethodType.Constructor)]
 	[HarmonyPatch(new[] { typeof(Engine)})]
