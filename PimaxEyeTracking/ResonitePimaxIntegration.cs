@@ -47,7 +47,7 @@ public class ResonitePimaxIntegration : ResoniteMod
 	private readonly static EyeTracker eyeTracker = new();
 	public override void OnEngineInit()
 	{
-		new Harmony("net.dfg.PimaxEyeTracking").PatchAll();
+		new Harmony("net.dfgHiatus.PimaxEyeTracking").PatchAll();
 		config = GetConfiguration();
 		config.OnThisConfigurationChanged += HandleChanges;
 		Engine.Current.OnShutdown += () => eyeTracker.Stop();
